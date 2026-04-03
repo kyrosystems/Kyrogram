@@ -3,11 +3,17 @@ project(Kyrogram C)
 
 set(CMAKE_C_STANDARD 11)
 
-# Добавляем пути для поиска библиотек в папке проекта
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/libs")
+# Optimization flags
+if(MSVC)
+    add_compile_options(/O2 /MT)
+else()
+    add_compile_options(-O3 -march=native)
+endif()
+
+# Include directories
 include_directories(include)
 
-# Исходники (Включаем cJSON для парсинга)
+# Source files
 set(SOURCES 
     src/main.c
     src/security/storage.c
@@ -16,29 +22,31 @@ set(SOURCES
     src/core/settings.c
     src/core/media.c
     src/network/proxy_manager.c
-    src/network/cJSON.c
 )
 
-# Поиск библиотек
-find_package(raylib REQUIRED)
-find_package(mbedtls REQUIRED)
+# Raylib
+find_package(raylib 4.0 REQUIRED)
 
-# Поиск TDJSON (Telegram Core)
-find_library(TDJSON_LIB NAMES tdjson PATHS "${CMAKE_CURRENT_SOURCE_DIR}/bin" "${CMAKE_CURRENT_SOURCE_DIR}/libs")
+# mbedTLS
+find_package(mbedTLS REQUIRED)
 
+# TDLib (Searching for tdjson)
+find_library(TD_JSON_LIB NAMES tdjson tdjson_static REQUIRED)
+
+# Executable
 add_executable(kyrogram ${SOURCES})
 
-# Линковка
-if (WIN32)
-    target_link_libraries(kyrogram ${TDJSON_LIB} raylib mbedtls mbedcrypto mbedx509 winmm gdi32 opengl32 shell32)
-else()
-    target_link_libraries(kyrogram ${TDJSON_LIB} raylib mbedtls mbedcrypto mbedx509 m pthread dl)
-endif()
+# Linking
+target_link_libraries(kyrogram 
+    raylib 
+    mbedtls mbedcrypto mbedx509 
+    ${TD_JSON_LIB}
+)
 
-# Копирование бинарников после сборки (Windows)
 if (WIN32)
-    add_custom_command(TARGET kyrogram POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/bin/tdjson.dll"
-        $<TARGET_FILE_DIR:kyrogram>)
+    target_link_libraries(kyrogram winmm gdi32 opengl32 shell32 user32)
+elseif(APPLE)
+    target_link_libraries(kyrogram "-framework IOKit" "-framework Cocoa" "-framework OpenGL" "-framework CoreVideo")
+else()
+    target_link_libraries(kyrogram m pthread dl X11)
 endif()

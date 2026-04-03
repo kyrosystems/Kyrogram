@@ -1,51 +1,35 @@
-name: Kyrogram Multi-Platform Build
+name: Kyrogram Build
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+on: [push, pull_request]
 
 jobs:
   build:
-    name: Build for ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false # Чтобы ошибка на одной ОС не прерывала остальные
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Install Dependencies (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential cmake libraylib-dev libmbedtls-dev libasound2-dev libmesa-dev libxi-dev libxcursor-dev libxinerama-dev libxrandr-dev
-
-    - name: Install Dependencies (Windows)
-      if: matrix.os == 'windows-latest'
-      run: |
-        vcpkg install raylib:x64-windows mbedtls:x64-windows
-
-    - name: Install Dependencies (macOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-        brew install raylib mbedtls cmake
-
-    - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
-
-    - name: Build
-      run: cmake --build build --config Release
-
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: Kyrogram-${{ matrix.os }}
-        path: |
-          build/kyrogram*
-          bin/*.dll
-          bin/*.so
-          bin/*.dylib
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libraylib-dev libmbedtls-dev cmake build-essential libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev
+      
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: brew install raylib mbedtls cmake
+        
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          vcpkg install raylib:x64-windows mbedtls:x64-windows
+          
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --config Release
