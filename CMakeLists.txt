@@ -41,26 +41,21 @@ set(SOURCES
 
 add_executable(kyrogram ${SOURCES})
 
-# 3. TDLib (Бинарная линковка)
-# Так как TDLib собирается 2 часа, мы ищем её в папке проекта
-find_library(TD_JSON_LIB NAMES tdjson tdjson_static PATHS ${CMAKE_SOURCE_DIR}/libs)
-
-target_link_libraries(kyrogram 
-    raylib 
-    mbedtls mbedcrypto mbedx509
-)
-
-if(TD_JSON_LIB)
-    target_link_libraries(kyrogram ${TD_JSON_LIB})
-else()
-    message(WARNING "TDLib (tdjson) not found! Core Telegram features will not link. Place tdjson in /libs folder.")
-endif()
+# Линковка
+target_link_libraries(kyrogram raylib mbedtls mbedcrypto mbedx509)
 
 # Системные зависимости
 if (WIN32)
     target_link_libraries(kyrogram winmm gdi32 opengl32 shell32 user32)
 elseif(APPLE)
+    # macOS frameworks for raylib
     target_link_libraries(kyrogram "-framework IOKit" "-framework Cocoa" "-framework OpenGL" "-framework CoreVideo")
 else()
     target_link_libraries(kyrogram m pthread dl X11)
+endif()
+
+# Опциональная TDLib
+find_library(TD_JSON_LIB NAMES tdjson tdjson_static PATHS ${CMAKE_SOURCE_DIR}/libs)
+if(TD_JSON_LIB)
+    target_link_libraries(kyrogram ${TD_JSON_LIB})
 endif()
