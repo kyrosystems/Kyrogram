@@ -1,0 +1,50 @@
+name: Kyrogram Multi-Platform Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install Dependencies (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake libraylib-dev libmbedtls-dev libasound2-dev libmesa-dev libxi-dev libxcursor-dev libxinerama-dev libxrandr-dev
+
+    - name: Install Dependencies (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        vcpkg install raylib:x64-windows mbedtls:x64-windows
+
+    - name: Install Dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install raylib mbedtls cmake
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: Kyrogram-${{ matrix.os }}
+        path: |
+          build/kyrogram*
+          bin/*.dll
+          bin/*.so
+          bin/*.dylib

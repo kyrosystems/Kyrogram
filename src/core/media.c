@@ -1,24 +1,23 @@
 #include "kyrogram.h"
 #include <stdio.h>
-
-// Requirement 4: Video notes, Voice messages, Stickers
-// This is the core logic for processing media before sending to Telegram servers
+#include <stdlib.h>
 
 void kyro_media_process_video_note(const char* input_path, char* output_path) {
-    // Используем FFmpeg для обрезки видео в круг 1:1
-    // Команда: ffmpeg -i input -vf "crop=ih:ih,scale=640:640" -c:v libx264 -crf 23 output.mp4
-    printf("[CORE] Processing video note for path: %s\n", input_path);
+    char command[1024];
+    sprintf(command, "ffmpeg -y -i \"%s\" -vf \"crop=ih:ih,scale=640:640\" -c:v libx264 -preset superfast -crf 23 -c:a aac \"%s\"", 
+            input_path, output_path);
     
-    // В реальном C-коде мы вызываем libavcodec или system(ffmpeg)
-    // Для максимальной скорости на всех системах (Req 7) лучше использовать libav.
+    int ret = system(command);
+    if (ret == 0) {
+        printf("[MEDIA] Video note processed successfully: %s\n", output_path);
+    } else {
+        fprintf(stderr, "[MEDIA] FFmpeg error during video processing.\n");
+    }
 }
 
 void kyro_media_encode_voice(const char* input_path, char* output_path) {
-    // Кодирование в OPUS (стандарт Telegram)
-    printf("[CORE] Encoding voice message...\n");
-}
-
-void kyro_media_download_sticker(const char* remote_id) {
-    // Requirement 4: Receiving stickers (TGS/WEBP)
-    // TDLib handle downloads automatically, we just need the trigger
+    char command[512];
+    // Конвертация в OGG OPUS
+    sprintf(command, "ffmpeg -y -i \"%s\" -c:a libopus -b:a 32k \"%s\"", input_path, output_path);
+    system(command);
 }

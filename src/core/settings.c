@@ -1,7 +1,6 @@
 #include "kyrogram.h"
 #include "network.h"
 
-// Requirement 3: Full working port of ALL telegram settings
 typedef struct {
     bool show_previews;
     bool enable_notifications;
@@ -20,7 +19,6 @@ void kyro_settings_load_defaults(void) {
     local_settings.auto_update = true;
 }
 
-// Requirement 3: Syncing local settings with Telegram server
 void kyro_settings_sync_server(void) {
     // Получение настроек аккаунта через TDLib
     kyro_net_send("{\"@type\": \"getUserPrivacySettingRules\", \"setting\": {\"@type\": \"userPrivacySettingShowStatus\"}}");
