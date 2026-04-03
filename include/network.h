@@ -3,31 +3,22 @@
 
 #include "kyrogram.h"
 
-// TDLib C interface functions (will be linked from tdjson)
-extern void* td_json_client_create();
-extern void td_json_client_send(void* client, const char* request);
-extern const char* td_json_client_receive(void* client, double timeout);
-extern void td_json_client_destroy(void* client);
+// TDLib C interface (must be linked from tdjson)
+void* td_json_client_create();
+void td_json_client_send(void* client, const char* request);
+const char* td_json_client_receive(void* client, double timeout);
+void td_json_client_destroy(void* client);
 
-/**
- * Initializes the TDLib client and sets up the event loop.
- */
+// Kyro Network Core
 void kyro_net_init(void);
-
-/**
- * Sends a request to Telegram via TDLib.
- * @param method JSON-formatted request string
- */
+void kyro_net_init_params(void);
 void kyro_net_send(const char* method);
-
-/**
- * Main polling loop for incoming Telegram updates.
- */
 void kyro_net_poll(void);
-
-/**
- * Sets up proxy and anti-blocking (RKN bypass).
- */
 void kyro_net_setup_proxy(const char* server, int port, const char* user, const char* pass);
+void kyro_net_setup_smart_proxy(void);
+
+// Messaging
+void kyro_send_text(long long chat_id, const char* text);
+void kyro_send_video_note(long long chat_id, const char* path);
 
 #endif // KYRO_NETWORK_H

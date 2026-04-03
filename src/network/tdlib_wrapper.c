@@ -5,18 +5,10 @@
 #define TELEGRAM_API_ID 27827667
 #define TELEGRAM_API_HASH "8f885d1bebe32da81c42677c42aed659"
 
-typedef enum {
-    AUTH_STATE_START,
-    AUTH_STATE_WAIT_PARAMS,
-    AUTH_STATE_WAIT_ENCRYPTION_KEY,
-    AUTH_STATE_WAIT_PHONE,
-    AUTH_STATE_WAIT_CODE,
-    AUTH_STATE_WAIT_PASSWORD,
-    AUTH_STATE_READY
-} KyroAuthState;
+// Static prototypes to avoid implicit declaration warnings
+void kyro_net_init_params(void);
 
 static void* client = NULL;
-static KyroAuthState current_auth_state = AUTH_STATE_START;
 
 void kyro_net_init(void) {
     client = td_json_client_create();
@@ -25,7 +17,7 @@ void kyro_net_init(void) {
 }
 
 void kyro_net_init_params(void) {
-    char params[1024];
+    char params[2048];
     sprintf(params, 
         "{\"@type\": \"setTdlibParameters\", \"use_test_dc\": false, \"database_directory\": \"tdlib_data\", "
         "\"files_directory\": \"files\", \"use_file_database\": true, \"use_chat_info_database\": true, "
@@ -45,20 +37,23 @@ void kyro_net_send(const char* method) {
 
 void kyro_net_poll(void) {
     if (!client) return;
-    
     const char* result = td_json_client_receive(client, 0.0);
     if (result) {
         if (strstr(result, "updateAuthorizationState")) {
             if (strstr(result, "authorizationStateWaitTdlibParameters")) {
                 kyro_net_init_params();
             } else if (strstr(result, "authorizationStateWaitEncryptionKey")) {
-                // Используем защищенный ключ базы данных
                 kyro_net_send("{\"@type\": \"checkDatabaseEncryptionKey\", \"encryption_key\": \"kyro_secure_storage_v1\"}");
-            } else if (strstr(result, "authorizationStateReady")) {
-                current_auth_state = AUTH_STATE_READY;
             }
         }
     }
+}
+
+void kyro_send_text(long long chat_id, const char* text) {
+    char cmd[2048];
+    sprintf(cmd, "{\"@type\": \"sendMessage\", \"chat_id\": %lld, \"input_message_content\": "
+                 "{\"@type\": \"inputMessageText\", \"text\": {\"text\": \"%s\"}}}", chat_id, text);
+    kyro_net_send(cmd);
 }
 
 void kyro_net_setup_proxy(const char* server, int port, const char* user, const char* pass) {

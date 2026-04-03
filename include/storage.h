@@ -3,14 +3,8 @@
 
 #include "kyrogram.h"
 
-// Encrypts account data to the disk
-// Using a derived key from user passphrase or device ID
-bool kyro_secure_save(const char* account_id, const unsigned char* data, size_t size);
-
-// Decrypts and loads account data
-unsigned char* kyro_secure_load(const char* account_id, size_t* out_size);
-
-// Initialization of crypto modules
 void kyro_crypto_init(void);
+bool kyro_secure_save(const char* account_id, const unsigned char* data, size_t size);
+unsigned char* kyro_secure_load(const char* account_id, size_t* out_size);
 
 #endif // KYRO_STORAGE_H
