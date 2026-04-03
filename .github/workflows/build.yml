@@ -12,22 +12,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install dependencies (Ubuntu)
+      - name: Install Build Tools (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libraylib-dev libmbedtls-dev cmake build-essential libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev
+          sudo apt-get install -y cmake build-essential libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev
       
-      - name: Install dependencies (macOS)
+      - name: Install Build Tools (macOS)
         if: matrix.os == 'macos-latest'
-        run: brew install raylib mbedtls cmake
+        run: brew install cmake
         
-      - name: Install dependencies (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          vcpkg install raylib:x64-windows mbedtls:x64-windows
-          
-      - name: Build
+      - name: Build Kyrogram
         run: |
           mkdir build
           cd build
