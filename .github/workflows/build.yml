@@ -1,6 +1,10 @@
-name: Kyrogram Build
+name: Kyrogram Build & Permanent Release
 
-on: [push, pull_request]
+on: 
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -8,18 +12,36 @@ env:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    outputs:
+      VERSION: ${{ steps.get_version.outputs.VERSION }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-    
+        include:
+          - os: ubuntu-latest
+            platform_name: linux
+            binary_path: build/kyrogram
+          - os: macos-latest
+            platform_name: macos
+            binary_path: build/kyrogram
+          - os: windows-latest
+            platform_name: windows
+            binary_path: build/Release/kyrogram.exe
+
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup Node.js (Fix Deprecation)
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
+      - name: Extract Version from code
+        id: get_version
+        shell: bash
+        run: |
+          MAJOR=$(grep "KYRO_VERSION_MAJOR" include/kyrogram.h | awk '{print $3}')
+          MINOR=$(grep "KYRO_VERSION_MINOR" include/kyrogram.h | awk '{print $3}')
+          PATCH=$(grep "KYRO_VERSION_PATCH" include/kyrogram.h | awk '{print $3}')
+          VER="v$MAJOR.$MINOR.$PATCH"
+          echo "VERSION=$VER" >> $GITHUB_ENV
+          echo "VERSION=$VER" >> $GITHUB_OUTPUT
 
       - name: Install Build Tools (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
@@ -37,3 +59,49 @@ jobs:
           cd build
           cmake ..
           cmake --build . --config Release
+
+      - name: Rename Output
+        shell: bash
+        run: |
+          mkdir -p dist
+          # Имя файла включает версию, чтобы они не затирали друг друга в одном релизе
+          FINAL_NAME="kyrogram-${{ matrix.platform_name }}-${{ steps.get_version.outputs.VERSION }}"
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            cp ${{ matrix.binary_path }} dist/${FINAL_NAME}.exe
+          else
+            cp ${{ matrix.binary_path }} dist/${FINAL_NAME}
+          fi
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kyrogram-${{ matrix.platform_name }}
+          path: dist/*
+
+  release:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all_artifacts
+
+      - name: Create or Update Version Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: all_artifacts/**/*
+          tag_name: ${{ needs.build.outputs.VERSION }}
+          name: KyroGram Release ${{ needs.build.outputs.VERSION }}
+          body: |
+            Build for version ${{ needs.build.outputs.VERSION }}
+            Author: pon4ikisdonut (KyroSystems NUA)
+            This release contains binaries for Windows, Linux, and macOS.
+          draft: false
+          prerelease: false
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

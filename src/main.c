@@ -36,7 +36,6 @@ int main(int argc, char** argv) {
 
     // Initial messages
     add_local_message("Welcome to KyroGram client!", false);
-    add_local_message("Build for windows, linux and macos successful.", false);
 
     while (!WindowShouldClose() && kyro_state.is_running) {
         kyro_net_poll();
