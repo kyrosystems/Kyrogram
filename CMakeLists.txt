@@ -1,12 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
+
+# Force compatibility for older dependencies on newer CMake (Fix for macOS)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
 project(Kyrogram C)
 
 set(CMAKE_C_STANDARD 11)
-
-# Fix Raylib CMake Policy on macOS
-if(POLICY CMP0000)
-    cmake_policy(SET CMP0000 NEW)
-endif()
 
 include(FetchContent)
 
